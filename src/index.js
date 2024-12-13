@@ -3,9 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { chromium } from 'playwright';
-import { dirname, join } from 'path';
-import fs from 'fs/promises';
-import os from 'os';
+import { dirname, join } from 'node:path';
+import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
 
 const app = express();
 const port = process.env.PORT || 8000;
