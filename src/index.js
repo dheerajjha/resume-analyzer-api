@@ -8,7 +8,7 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 
 const app = express();
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 80;
 
 // Default PDF configuration
 const DEFAULT_CONFIG = {
