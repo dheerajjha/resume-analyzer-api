@@ -19,7 +19,7 @@ def cleanup_files(html_path: str, pdf_path: str):
     except Exception as e:
         print(f"Cleanup error: {e}")
 
-@app.post("/")
+@app.post("/convert-to-pdf")
 async def convert_to_pdf(content: HTMLContent, background_tasks: BackgroundTasks):
     try:
         # Create a temporary file for the HTML
