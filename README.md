@@ -1,69 +1,42 @@
 # Resume HTML to PDF Converter API
 
-This API service converts HTML resumes to searchable PDFs using Playwright. It maintains text searchability and preserves all HTML/CSS styling.
+A Node.js API service that converts HTML resumes to searchable PDFs using Playwright.
+
+## Prerequisites
+
+- Node.js 18.x or higher
+- npm or yarn
 
 ## Setup Instructions
 
-### Docker Setup (Recommended for Ubuntu)
-
-1. Run the automated setup script:
+1. Install dependencies:
 ```bash
-chmod +x setup.sh
-./setup.sh
+npm install
+# or
+yarn install
 ```
 
-The script will:
-- Install Docker if not installed
-- Create a Dockerfile and docker-compose.yml
-- Build and start the Docker container
-- Set up automatic restart and health checks
-- Configure logging
-
-### macOS Setup
-
-1. Run the automated setup script:
+2. Start the server:
 ```bash
-chmod +x setup_macos.sh
-./setup_macos.sh
-```
+# Development mode with auto-reload
+npm run dev
+# or
+yarn dev
 
-The script will:
-- Install Homebrew (if not installed)
-- Install Python 3.11
-- Set up a virtual environment
-- Install all dependencies
-- Install Playwright browsers
-- Optionally set up auto-start on login
-- Start the API server
-
-### Manual Setup (Any Platform)
-
-1. Create a virtual environment:
-```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Install Playwright browsers:
-```bash
-playwright install
-```
-
-4. Run the API server:
-```bash
-python main.py
+# Production mode
+npm start
+# or
+yarn start
 ```
 
 The server will start at `http://localhost:8000`
 
 ## API Endpoints
 
-### POST /convert-to-pdf
+### GET /
+Health check endpoint that returns API information.
+
+### POST /api/v1/convert-to-pdf
 Converts HTML content to PDF.
 
 Request body:
@@ -75,14 +48,11 @@ Request body:
 
 Response: PDF file download
 
-### GET /
-Health check endpoint that returns API information.
-
 ## Example Usage
 
 ### Using cURL
 ```bash
-curl -X POST "http://localhost:8000/convert-to-pdf" \
+curl -X POST "http://localhost:8000/api/v1/convert-to-pdf" \
      -H "Content-Type: application/json" \
      -d '{
        "html": "<!DOCTYPE html><html><head><title>John Doe Resume</title><style>body{font-family: Arial, sans-serif;margin: 40px;}</style></head><body><h1>John Doe</h1><p>Software Engineer</p></body></html>"
@@ -90,99 +60,97 @@ curl -X POST "http://localhost:8000/convert-to-pdf" \
      --output resume.pdf
 ```
 
-### Using Python Requests
-```python
-import requests
+### Using JavaScript/Node.js
+```javascript
+const response = await fetch('http://localhost:8000/api/v1/convert-to-pdf', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <title>John Doe Resume</title>
+          <style>
+              body { font-family: Arial, sans-serif; margin: 40px; }
+          </style>
+      </head>
+      <body>
+          <h1>John Doe</h1>
+          <p>Software Engineer</p>
+      </body>
+      </html>
+    `
+  })
+});
 
-url = "http://localhost:8000/convert-to-pdf"
-html_content = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>John Doe Resume</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-    </style>
-</head>
-<body>
-    <h1>John Doe</h1>
-    <p>Software Engineer</p>
-</body>
-</html>
-"""
-
-response = requests.post(
-    url,
-    json={"html": html_content},
-    stream=True
-)
-
-if response.status_code == 200:
-    with open("resume.pdf", "wb") as f:
-        f.write(response.content)
+if (response.ok) {
+  const blob = await response.blob();
+  // Save or process the PDF blob
+}
 ```
+
+## Development
+
+- `npm run dev`: Start development server with auto-reload
+- `npm start`: Start production server
+- `npm test`: Run tests
+
+## Project Structure
+
+```
+.
+├── src/
+│   └── index.js     # Main application file
+├── package.json     # Project configuration
+└── README.md       # Documentation
+```
+
+## Features
+
+- Converts HTML to searchable PDF
+- Maintains text searchability
+- Preserves CSS styling
+- Automatic cleanup of temporary files
+- CORS enabled
+- Security headers with Helmet
+- Request logging with Morgan
+- Error handling middleware
 
 ## Production Considerations
 
-1. SSL/TLS: For production, configure SSL certificates using Nginx or similar.
-2. Rate Limiting: Implement rate limiting for the API endpoints.
-3. Authentication: Add API key authentication for production use.
-4. Monitoring: Set up monitoring and logging.
-5. Docker Specific:
-   - Use Docker secrets for sensitive data
-   - Configure container resource limits
-   - Set up container monitoring
-   - Use Docker volumes for persistent data
+1. Environment Variables:
+   - `PORT`: Server port (default: 8000)
+   - Add any additional configuration as needed
 
-## Service Management
+2. Security:
+   - Configure CORS as needed
+   - Add rate limiting
+   - Add authentication if required
+   - Use HTTPS in production
 
-### Docker (Ubuntu)
-- Start service: `docker-compose up -d`
-- Stop service: `docker-compose down`
-- View logs: `docker-compose logs -f`
-- Rebuild: `docker-compose up --build -d`
-- Container shell: `docker-compose exec resume-pdf-api bash`
-- Check status: `docker-compose ps`
-
-### macOS
-- Start service: `launchctl load ~/Library/LaunchAgents/com.resume.pdf.converter.plist`
-- Stop service: `launchctl unload ~/Library/LaunchAgents/com.resume.pdf.converter.plist`
-- View logs: 
-  - API logs: `tail -f api.log`
-  - Error logs: `tail -f api.error.log`
+3. Monitoring:
+   - Add logging service
+   - Monitor memory usage
+   - Track API usage
 
 ## Troubleshooting
 
-1. Docker Issues:
+1. If Playwright fails to install browsers:
 ```bash
-# Check container status
-docker-compose ps
-
-# View detailed logs
-docker-compose logs -f
-
-# Restart container
-docker-compose restart
-
-# Rebuild container
-docker-compose up --build -d
+npx playwright install chromium
 ```
 
-2. Permission Issues:
+2. If you get permission errors:
 ```bash
 # Fix directory permissions
 sudo chown -R $USER:$USER .
-
-# Fix Docker permissions
-sudo usermod -aG docker $USER  # Requires logout/login
 ```
 
-3. Network Issues:
+3. Memory issues:
 ```bash
-# Check if container is exposed
-docker-compose port resume-pdf-api 8000
-
-# Check container network
-docker network ls
-docker network inspect resume-analyzer-api_default
+# Increase Node.js memory limit if needed
+NODE_OPTIONS="--max-old-space-size=4096" npm start
 ``` 

@@ -43,6 +43,29 @@ htmlcov/
 
 # Playwright
 node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Project specific
+*.pdf
+*.html
+!templates/*.html
+*.log
+coverage/
+
+# Playwright
 /test-results/
 /playwright-report/
 /playwright/.cache/ 
+package-lock.json
