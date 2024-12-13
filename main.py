@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import asyncio
 from playwright.async_api import async_playwright
 import tempfile
 import os
