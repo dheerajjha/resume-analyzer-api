@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import asyncio
@@ -11,8 +11,17 @@ app = FastAPI(title="Resume HTML to PDF Converter")
 class HTMLContent(BaseModel):
     html: str
 
+def cleanup_files(html_path: str, pdf_path: str):
+    try:
+        if os.path.exists(html_path):
+            os.unlink(html_path)
+        if os.path.exists(pdf_path):
+            os.unlink(pdf_path)
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+
 @app.post("/convert-to-pdf")
-async def convert_to_pdf(content: HTMLContent):
+async def convert_to_pdf(content: HTMLContent, background_tasks: BackgroundTasks):
     try:
         # Create a temporary file for the HTML
         with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w', encoding='utf-8') as html_file:
@@ -34,25 +43,19 @@ async def convert_to_pdf(content: HTMLContent):
             
             await browser.close()
 
+        # Add cleanup to background tasks
+        background_tasks.add_task(cleanup_files, html_path, pdf_path)
+
         # Return the PDF file
-        response = FileResponse(
+        return FileResponse(
             pdf_path,
             media_type='application/pdf',
             filename='resume.pdf'
         )
 
-        # Clean up temporary files
-        def cleanup():
-            try:
-                os.unlink(html_path)
-                os.unlink(pdf_path)
-            except:
-                pass
-
-        response.background = cleanup
-        return response
-
     except Exception as e:
+        # Clean up files if there's an error
+        cleanup_files(html_path, pdf_path)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
