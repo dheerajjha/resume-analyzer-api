@@ -6,9 +6,18 @@ import { chromium } from 'playwright';
 import { dirname, join } from 'node:path';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
+import * as https from 'node:https';
+import * as http from 'node:http';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 80;
+const httpsPort = process.env.HTTPS_PORT || 443;
+const domain = process.env.DOMAIN || 'localhost';
+const isProduction = process.env.NODE_ENV === 'production';
 
 // Default PDF configuration
 const DEFAULT_CONFIG = {
@@ -142,7 +151,43 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-}); 
+// Start server based on environment
+if (isProduction) {
+  try {
+    // Only try to read SSL certificates in production
+    const privateKey = await fs.readFile(process.env.SSL_PRIVATE_KEY, 'utf8');
+    const certificate = await fs.readFile(process.env.SSL_CERTIFICATE, 'utf8');
+    
+    const credentials = {
+      key: privateKey,
+      cert: certificate
+    };
+
+    // Create HTTPS server
+    const httpsServer = https.createServer(credentials, app);
+    
+    httpsServer.listen(httpsPort, () => {
+      console.log(`HTTPS Server running on https://${domain}:${httpsPort}`);
+    });
+
+    // Redirect HTTP to HTTPS in production
+    const httpApp = express();
+    httpApp.use((req, res) => {
+      res.redirect(`https://${req.headers.host}${req.url}`);
+    });
+    
+    http.createServer(httpApp).listen(port, () => {
+      console.log(`HTTP redirect server running on http://${domain}:${port}`);
+    });
+
+  } catch (error) {
+    console.error('Failed to start HTTPS server:', error);
+    process.exit(1);
+  }
+} else {
+  // Development environment - use HTTP only
+  app.listen(port, () => {
+    console.log(`Development server running on http://${domain}:${port}`);
+    console.log('SSL/HTTPS is disabled in development mode');
+  });
+} 
