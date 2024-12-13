@@ -2,14 +2,41 @@
 
 This API service converts HTML resumes to searchable PDFs using Playwright. It maintains text searchability and preserves all HTML/CSS styling.
 
-## Local Setup
+## Setup Instructions
 
-### Prerequisites
-- Python 3.11 or higher
-- pip (Python package manager)
-- virtualenv
+### Docker Setup (Recommended for Ubuntu)
 
-### Local Installation Steps
+1. Run the automated setup script:
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+The script will:
+- Install Docker if not installed
+- Create a Dockerfile and docker-compose.yml
+- Build and start the Docker container
+- Set up automatic restart and health checks
+- Configure logging
+
+### macOS Setup
+
+1. Run the automated setup script:
+```bash
+chmod +x setup_macos.sh
+./setup_macos.sh
+```
+
+The script will:
+- Install Homebrew (if not installed)
+- Install Python 3.11
+- Set up a virtual environment
+- Install all dependencies
+- Install Playwright browsers
+- Optionally set up auto-start on login
+- Start the API server
+
+### Manual Setup (Any Platform)
 
 1. Create a virtual environment:
 ```bash
@@ -33,83 +60,6 @@ python main.py
 ```
 
 The server will start at `http://localhost:8000`
-
-## Ubuntu Server Deployment
-
-### One-Click Setup Script
-Save this as `setup.sh` in your server:
-
-```bash
-#!/bin/bash
-
-# Update system packages
-sudo apt-get update
-sudo apt-get upgrade -y
-
-# Install Python and required system dependencies
-sudo apt-get install -y python3.11 python3.11-venv python3-pip
-
-# Install additional dependencies for Playwright
-sudo apt-get install -y \
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libdbus-1-3 \
-    libxkbcommon0 \
-    libatspi2.0-0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2
-
-# Create and activate virtual environment
-python3.11 -m venv venv
-source venv/bin/activate
-
-# Upgrade pip and install requirements
-pip install --upgrade pip
-pip install -r requirements.txt
-
-# Install Playwright browsers
-playwright install
-
-# Create systemd service file
-sudo tee /etc/systemd/system/resume-pdf-api.service << EOF
-[Unit]
-Description=Resume PDF Converter API
-After=network.target
-
-[Service]
-User=$USER
-WorkingDirectory=$(pwd)
-Environment="PATH=$(pwd)/venv/bin"
-ExecStart=$(pwd)/venv/bin/python main.py
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Start and enable the service
-sudo systemctl daemon-reload
-sudo systemctl start resume-pdf-api
-sudo systemctl enable resume-pdf-api
-
-echo "Setup completed! The API service is now running."
-```
-
-Make the script executable and run it:
-```bash
-chmod +x setup.sh
-./setup.sh
-```
 
 ## API Endpoints
 
@@ -178,25 +128,61 @@ if response.status_code == 200:
 2. Rate Limiting: Implement rate limiting for the API endpoints.
 3. Authentication: Add API key authentication for production use.
 4. Monitoring: Set up monitoring and logging.
+5. Docker Specific:
+   - Use Docker secrets for sensitive data
+   - Configure container resource limits
+   - Set up container monitoring
+   - Use Docker volumes for persistent data
+
+## Service Management
+
+### Docker (Ubuntu)
+- Start service: `docker-compose up -d`
+- Stop service: `docker-compose down`
+- View logs: `docker-compose logs -f`
+- Rebuild: `docker-compose up --build -d`
+- Container shell: `docker-compose exec resume-pdf-api bash`
+- Check status: `docker-compose ps`
+
+### macOS
+- Start service: `launchctl load ~/Library/LaunchAgents/com.resume.pdf.converter.plist`
+- Stop service: `launchctl unload ~/Library/LaunchAgents/com.resume.pdf.converter.plist`
+- View logs: 
+  - API logs: `tail -f api.log`
+  - Error logs: `tail -f api.error.log`
 
 ## Troubleshooting
 
-1. If Playwright fails to install browsers:
+1. Docker Issues:
 ```bash
-# Try installing with sudo
-sudo playwright install
+# Check container status
+docker-compose ps
+
+# View detailed logs
+docker-compose logs -f
+
+# Restart container
+docker-compose restart
+
+# Rebuild container
+docker-compose up --build -d
 ```
 
-2. If you get permission errors:
+2. Permission Issues:
 ```bash
 # Fix directory permissions
 sudo chown -R $USER:$USER .
+
+# Fix Docker permissions
+sudo usermod -aG docker $USER  # Requires logout/login
 ```
 
-3. If the service fails to start:
+3. Network Issues:
 ```bash
-# Check service status
-sudo systemctl status resume-pdf-api
-# Check logs
-sudo journalctl -u resume-pdf-api
+# Check if container is exposed
+docker-compose port resume-pdf-api 8000
+
+# Check container network
+docker network ls
+docker network inspect resume-analyzer-api_default
 ``` 
