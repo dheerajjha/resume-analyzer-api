@@ -10,6 +10,25 @@ import * as os from 'node:os';
 const app = express();
 const port = process.env.PORT || 8000;
 
+// Default PDF configuration
+const DEFAULT_CONFIG = {
+  format: 'A4',
+  printBackground: true,
+  margin: {
+    top: '20px',
+    right: '20px',
+    bottom: '20px',
+    left: '20px'
+  },
+  scale: 1.0,
+  landscape: false,
+  preferCSSPageSize: false,
+  displayHeaderFooter: false,
+  headerTemplate: '',
+  footerTemplate: '',
+  pageRanges: ''
+};
+
 // Middleware
 app.use(cors());
 app.use(helmet());
@@ -21,15 +40,42 @@ app.get('/', (req, res) => {
   res.json({
     message: 'Resume HTML to PDF Converter API',
     version: '1.0.0',
-    endpoints: ['/convert-to-pdf']
+    endpoints: ['/convert-to-pdf'],
+    configOptions: {
+      format: ['A4', 'A3', 'A5', 'Letter', 'Legal', 'Tabloid'],
+      margin: 'Object with top, right, bottom, left in px/cm/in',
+      scale: 'Number between 0.1 and 2',
+      landscape: 'Boolean',
+      printBackground: 'Boolean',
+      preferCSSPageSize: 'Boolean',
+      displayHeaderFooter: 'Boolean',
+      headerTemplate: 'HTML string',
+      footerTemplate: 'HTML string',
+      pageRanges: 'String (e.g., "1-5, 8")'
+    }
   });
 });
 
 app.post('/convert-to-pdf', async (req, res) => {
-  const { html } = req.body;
+  const { html, config = {} } = req.body;
   
   if (!html) {
     return res.status(400).json({ error: 'HTML content is required' });
+  }
+
+  // Merge default config with user config
+  const pdfConfig = {
+    ...DEFAULT_CONFIG,
+    ...config,
+    margin: {
+      ...DEFAULT_CONFIG.margin,
+      ...(config.margin || {})
+    }
+  };
+
+  // Validate config
+  if (pdfConfig.scale && (pdfConfig.scale < 0.1 || pdfConfig.scale > 2)) {
+    return res.status(400).json({ error: 'Scale must be between 0.1 and 2' });
   }
 
   let browser;
@@ -47,20 +93,15 @@ app.post('/convert-to-pdf', async (req, res) => {
 
     // Launch browser and create PDF
     browser = await chromium.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] // Required for running in Docker/Ubuntu
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     const page = await browser.newPage();
     await page.goto(`file://${tempHtmlPath}`);
+
+    // Generate PDF with user config
     await page.pdf({
       path: tempPdfPath,
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
-      }
+      ...pdfConfig
     });
 
     // Read PDF file
@@ -75,7 +116,10 @@ app.post('/convert-to-pdf', async (req, res) => {
 
   } catch (error) {
     console.error('PDF generation error:', error);
-    res.status(500).json({ error: 'Failed to generate PDF' });
+    res.status(500).json({ 
+      error: 'Failed to generate PDF',
+      details: error.message
+    });
 
   } finally {
     // Cleanup
@@ -92,7 +136,10 @@ app.post('/convert-to-pdf', async (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Something broke!' });
+  res.status(500).json({ 
+    error: 'Something broke!',
+    details: err.message
+  });
 });
 
 // Start server
