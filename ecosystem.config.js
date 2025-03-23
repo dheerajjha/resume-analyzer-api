@@ -2,10 +2,13 @@ module.exports = {
   apps: [{
     name: 'resume-analyzer-api',
     script: 'src/index.js',
-    interpreter: 'node',
-    interpreter_args: '--experimental-modules',
     env: {
-      NODE_ENV: 'production'
-    }
+      NODE_ENV: 'development',
+      PORT: 4000
+    },
+    watch: false,
+    instances: 1,
+    autorestart: true,
+    max_memory_restart: '1G'
   }]
 }; 
