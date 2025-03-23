@@ -152,42 +152,50 @@ app.use((err, req, res, next) => {
 });
 
 // Start server based on environment
-if (isProduction) {
-  try {
-    // Only try to read SSL certificates in production
-    const privateKey = await fs.readFile(process.env.SSL_PRIVATE_KEY, 'utf8');
-    const certificate = await fs.readFile(process.env.SSL_CERTIFICATE, 'utf8');
-    
-    const credentials = {
-      key: privateKey,
-      cert: certificate
-    };
+const startServer = async () => {
+  if (isProduction) {
+    try {
+      // Only try to read SSL certificates in production
+      const privateKey = await fs.readFile(process.env.SSL_PRIVATE_KEY, 'utf8');
+      const certificate = await fs.readFile(process.env.SSL_CERTIFICATE, 'utf8');
+      
+      const credentials = {
+        key: privateKey,
+        cert: certificate
+      };
 
-    // Create HTTPS server
-    const httpsServer = https.createServer(credentials, app);
-    
-    httpsServer.listen(httpsPort, () => {
-      console.log(`HTTPS Server running on https://${domain}:${httpsPort}`);
-    });
+      // Create HTTPS server
+      const httpsServer = https.createServer(credentials, app);
+      
+      httpsServer.listen(httpsPort, () => {
+        console.log(`HTTPS Server running on https://${domain}:${httpsPort}`);
+      });
 
-    // Redirect HTTP to HTTPS in production
-    const httpApp = express();
-    httpApp.use((req, res) => {
-      res.redirect(`https://${req.headers.host}${req.url}`);
-    });
-    
-    http.createServer(httpApp).listen(port, () => {
-      console.log(`HTTP redirect server running on http://${domain}:${port}`);
-    });
+      // Redirect HTTP to HTTPS in production
+      const httpApp = express();
+      httpApp.use((req, res) => {
+        res.redirect(`https://${req.headers.host}${req.url}`);
+      });
+      
+      http.createServer(httpApp).listen(port, () => {
+        console.log(`HTTP redirect server running on http://${domain}:${port}`);
+      });
 
-  } catch (error) {
-    console.error('Failed to start HTTPS server:', error);
-    process.exit(1);
+    } catch (error) {
+      console.error('Failed to start HTTPS server:', error);
+      process.exit(1);
+    }
+  } else {
+    // Development environment - use HTTP only
+    app.listen(port, () => {
+      console.log(`Development server running on http://${domain}:${port}`);
+      console.log('SSL/HTTPS is disabled in development mode');
+    });
   }
-} else {
-  // Development environment - use HTTP only
-  app.listen(port, () => {
-    console.log(`Development server running on http://${domain}:${port}`);
-    console.log('SSL/HTTPS is disabled in development mode');
-  });
-} 
+};
+
+// Start the server
+startServer().catch(error => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+}); 
