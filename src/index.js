@@ -1,14 +1,14 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { chromium } from 'playwright';
-import { dirname, join } from 'node:path';
-import * as fs from 'node:fs/promises';
-import * as os from 'node:os';
-import * as https from 'node:https';
-import * as http from 'node:http';
-import dotenv from 'dotenv';
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const { chromium } = require('playwright');
+const path = require('path');
+const fs = require('fs').promises;
+const os = require('os');
+const https = require('https');
+const http = require('http');
+const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config();
@@ -93,9 +93,9 @@ app.post('/convert-to-pdf', async (req, res) => {
 
   try {
     // Create temporary files
-    const tempDir = await fs.mkdtemp(join(os.tmpdir(), 'resume-'));
-    tempHtmlPath = join(tempDir, 'input.html');
-    tempPdfPath = join(tempDir, 'output.pdf');
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'resume-'));
+    tempHtmlPath = path.join(tempDir, 'input.html');
+    tempPdfPath = path.join(tempDir, 'output.pdf');
 
     // Write HTML to temp file
     await fs.writeFile(tempHtmlPath, html, 'utf8');
