@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "description": "API service to convert HTML resumes to searchable PDFs",
   "main": "src/index.js",
-  "type": "module",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "jest"
+    "test": "jest",
+    "pm2:start": "pm2 start src/index.js --name resume-analyzer-api",
+    "pm2:stop": "pm2 stop resume-analyzer-api",
+    "pm2:restart": "pm2 restart resume-analyzer-api",
+    "pm2:logs": "pm2 logs resume-analyzer-api"
   },
   "dependencies": {
     "cors": "^2.8.5",
