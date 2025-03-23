@@ -14,8 +14,8 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 80;
-const httpsPort = process.env.HTTPS_PORT || 443;
+const port = process.env.PORT || 3000;
+const httpsPort = process.env.HTTPS_PORT || 3443;
 const domain = process.env.DOMAIN || 'localhost';
 const isProduction = process.env.NODE_ENV === 'production';
 
